@@ -6,36 +6,34 @@
 ## 2008 Andreas Schwarz
 ##
 
-DBAdminPass=${1}
-BackupPath=${2}
+DBAdmin=${1}
+DBHost=${2}
+DBAdminPass=${3}
+BackupPath=${4}
 
-# check if pass was set
-if [ -z "${DBAdminPass}" ]; then
-	builtin echo "no password"
+IGNORE="mysql|information_schema"
+
+# check if all dependencies are met 
+if ! [ -x "/usr/bin/logger" ] || ! [ -x "/usr/bin/mysql" ] || ! [ -x "/usr/bin/mysqldump" ]; then
+	builtin echo "Missing dependency"
 	exit 1
 fi
 
-# check if path was set
-if [ -z "${BackupPath}" ]; then
-	builtin echo "no backup path"
-	exit 1
-fi
+# check if BackupPath is a writeable directory
+if [ ! -d $BackupPath ] || [ ! -w $BackupPath ]; then /usr/bin/logger "$0 - invalid or not writeable backup path"; exit 1; fi
 
-# check if path is a directory
-if ! [ -d "${BackupPath}" ]; then
-	builtin echo "backup path isn't a directory"
-	exit 1
-fi
+# list of databases without ingored ones
+DBS="$(/usr/bin/mysql -u$DBAdmin -h$DBHost -p$DBAdminPass -Bse 'show databases' | /bin/grep -Ev $IGNORE)"
 
-# check if logger is executable
-if ! [ -x "/usr/bin/logger" ]; then
-        builtin echo "Missing logger"
-        exit 1
-fi
+/usr/bin/logger "$0 - database backup begins on $HOSTNAME by $USER($UID)";
 
-/usr/bin/logger "$0: start mysql backup on $HOSTNAME by $USER($UID)"
+for DB in $DBS; do
+	/usr/bin/logger "$0 - backup from database $DB start"
+	/usr/bin/mysqldump -u$DBAdmin -h$DBHost -p$DBAdminPass --events --comments -R $DB > $BackupPath/database_${DB}_$(date +%A).sql
+	/usr/bin/logger "$0 - backup from database $DB finished"
+done
 
-mysqldump -uroot -hlocalhost '$DBAdminPass' --events --comments -R --all-databases > $BackupPath/databases_$(date +%A).sql
+/usr/bin/logger "$0 - database backup finished";
 
-/usr/bin/logger "$0: end mysql backup on $HOSTNAME by $USER($UID)"
+exit 0;
 
