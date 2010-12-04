@@ -3,7 +3,7 @@
 ##
 ## Keep it small & simple MySQL backup skript
 ##
-## 2008-2009 Andreas Schwarz
+## 2008-2010 Andreas Schwarz
 ##
 
 DBAdmin=${1}
@@ -11,9 +11,9 @@ DBHost=${2}
 DBAdminPass=${3}
 BackupPath=${4}
 
-IGNORE="mysql|information_schema"
-ALLOPT="--comments -R"
-SEPOPT="--comments -R"
+IGNORE="mysql|information_schema|performance_schema"
+ALLOPT="--events --comments -R"
+SEPOPT="--events --comments -R"
 
 # check if all arguments where set
 if [ -z "${DBAdmin}" ] || [ -z "${DBHOST}" ] || [ -z "${DBAdminPass}" ] || [ -z "$BackupPath" ]; then
