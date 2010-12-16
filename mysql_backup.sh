@@ -16,7 +16,7 @@ ALLOPT="--events --comments -R"
 SEPOPT="--events --comments -R"
 
 # check if all arguments where set
-if [ -z "${DBAdmin}" ] || [ -z "${DBHOST}" ] || [ -z "${DBAdminPass}" ] || [ -z "$BackupPath" ]; then
+if [ -z "${DBAdmin}" ] || [ -z "${DBHost}" ] || [ -z "${DBAdminPass}" ] || [ -z "$BackupPath" ]; then
 	builtin echo "no all arguments where set $0 [DB-Admin] [DB-Host] [DB-Admin-Ppassword] [Backup path]"
 	exit 1
 fi
