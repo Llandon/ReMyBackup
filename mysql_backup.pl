@@ -14,7 +14,7 @@
 ## ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 ## OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-## Remote MySQL backup skript 0.1.0
+## Remote MySQL backup skript 0.1.1
 
 use warnings;
 use strict;
@@ -29,11 +29,13 @@ use Net::OpenSSH;
 sub buildPathStr;
 sub pLogErrExit($);
 
+my $debug  = undef;
 my $client = undef;
 
 # read command line arguments #################################################
 
 GetOptions (
+	'debug'    => \$debug, # flag
 	'client=s' => \$client # string
 ) or do {
 	pLogErrExit("MySQL backup failed, error while getting options from cmd.");
@@ -111,22 +113,25 @@ foreach my $db (@databases) {
 		"--user='$dbuser' --password='$dbpass' --host='$dbhost' ".
 		"--databases '$db' @sepdumpopt";
 
-	print "[Backup ($db)]\n";
-	print "$dumpstr\n";
-	if(!open(my $fh, ">", $backupdir . $db . ".sql")) {   # open filehandle
-		my $errmsg = 
-			"Warning: can't dump database $db from $rname ($rhost). " .
-			"Error opening filehandle: " . $! . "\n";
-		print $errmsg;
-	}else{                                        # execute command via ssh
-		$ssh->system({stdout_fh => $fh}, $dumpstr);       # and write to fh
-		if($ssh->error) {
+	print "[Backup ($db)]\n", 'bold green';
+	if($debug) {
+		print "$dumpstr\n";
+	}else{
+		if(!open(my $fh, ">", $backupdir . $db . ".sql")) {   # open filehandle
 			my $errmsg = 
 				"Warning: can't dump database $db from $rname ($rhost). " .
-				"Error while SSH command: " . $ssh->error . "\n";
+				"Error opening filehandle: " . $! . "\n";
 			print $errmsg;
+		}else{                                        # execute command via ssh
+			$ssh->system({stdout_fh => $fh}, $dumpstr);       # and write to fh
+			if($ssh->error) {
+				my $errmsg = 
+					"Warning: can't dump database $db from $rname ($rhost). " .
+					"Error while SSH command: " . $ssh->error . "\n";
+				print $errmsg;
+}
+			close($fh);
 		}
-		close($fh);
 	}
 }
 
@@ -136,21 +141,24 @@ my $dumpstr = "$mysqldump " .
 	"--user='$dbuser' --password='$dbpass' --host='$dbhost' @alldumpopt";
 
 print "[Backup all databases]\n";
-print "$dumpstr\n";
-if(!open(my $fh, ">", $backupdir."all-databases.sql")) {  # open filehandle
-	my $errmsg =
-		"Warning: can't dump databases from $rname ($rhost) . " . 
-		"Error opening filehandle: " . $! . "\n";
-	print $errmsg;
-}else{                                            # execute command via ssh
-	$ssh->system({stdout_fh => $fh}, $dumpstr);           # and write to fh
-	if($ssh->error) {
-		my $errmsg = 
-			"Warning: can't dump databases from $rname ($rhost). " . 
-			"Error while SSH command: " . $ssh->error . "\n";
+if($debug) {
+	print "$dumpstr\n";
+}else{
+	if(!open(my $fh, ">", $backupdir."all-databases.sql")) {  # open filehandle
+		my $errmsg =
+			"Warning: can't dump databases from $rname ($rhost) . " . 
+			"Error opening filehandle: " . $! . "\n";
 		print $errmsg;
+	}else{                                            # execute command via ssh
+		$ssh->system({stdout_fh => $fh}, $dumpstr);           # and write to fh
+		if($ssh->error) {
+			my $errmsg = 
+				"Warning: can't dump databases from $rname ($rhost). " . 
+				"Error while SSH command: " . $ssh->error . "\n";
+			print $errmsg;
+}
+		close($fh);
 	}
-	close($fh);
 }
 
 
@@ -166,11 +174,11 @@ sub buildPathStr {
 	}
 	return $pathStr;
 }
-                                                       # print message and exit
+                                            # print message (on debug) and exit
 sub pLogErrExit($) {
 	my $message = shift;
 	
-	print $message;
+	print $message if $debug;
 
 	exit 1;
 }
