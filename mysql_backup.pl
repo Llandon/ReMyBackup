@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-## Copyright (c) 2010, Andreas Schwarz andreas.schwarz@uni-erlangen.de
+## Copyright (c) 2010-2011, Andreas Schwarz andreas.schwarz@uni-erlangen.de
 ##
 ## Permission to use, copy, modify, and/or distribute this software for any
 ## purpose with or without fee is hereby granted, provided that the above
@@ -14,7 +14,7 @@
 ## ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 ## OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-## Remote MySQL backup skript 0.1.1
+## Remote MySQL backup skript 0.1.2
 
 use warnings;
 use strict;
@@ -22,6 +22,7 @@ use strict;
 use DBI;
 use POSIX qw(strftime);
 use Config::Simple;
+use Term::ANSIColor;
 use Getopt::Long;
 use Data::Dumper;
 use Net::OpenSSH;
@@ -85,6 +86,7 @@ my $rport  = $clientCfg{rport};
    $rport  = "22" if !$rport or $rport eq "";
 my $rname  = $clientCfg{rname};
 
+# create backup directory if necessary ########################################
                                                      # build backup path string
 my $date      = strftime("%A", localtime);
 my $backupdir = buildPathStr($backupvault,$rname,$date);
@@ -113,7 +115,7 @@ foreach my $db (@databases) {
 		"--user='$dbuser' --password='$dbpass' --host='$dbhost' ".
 		"--databases '$db' @sepdumpopt";
 
-	print "[Backup ($db)]\n", 'bold green';
+	print colored("[Backup ($db)]\n", 'bold green');
 	if($debug) {
 		print "$dumpstr\n";
 	}else{
@@ -140,7 +142,7 @@ foreach my $db (@databases) {
 my $dumpstr = "$mysqldump " .
 	"--user='$dbuser' --password='$dbpass' --host='$dbhost' @alldumpopt";
 
-print "[Backup all databases]\n";
+print colored("[Backup all databases]\n", 'bold green');
 if($debug) {
 	print "$dumpstr\n";
 }else{
