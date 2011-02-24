@@ -14,7 +14,7 @@
 ## ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 ## OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-## Remote MySQL backup skript 0.1.3
+## Remote MySQL backup skript 0.2.0
 
 use warnings;
 use strict;
@@ -26,6 +26,7 @@ use Term::ANSIColor;
 use File::Path qw(make_path);
 use Getopt::Long;
 use Data::Dumper;
+use Sys::Syslog;
 use Net::OpenSSH;
 
 sub buildPathStr;
@@ -33,6 +34,8 @@ sub pLogErrExit($);
 
 my $debug  = undef;
 my $client = undef;
+
+syslog('info', 'start MySQL backup');
 
 # read command line arguments #################################################
 
@@ -126,11 +129,13 @@ foreach my $db (@databases) {
 	if($debug) {
 		print "$dumpstr\n";
 	}else{
+		syslog("info", "backup database $db from $rname ($rhost)");
 		if(!open(my $fh, ">", $backupdir . $db . ".sql")) {   # open filehandle
 			my $errmsg = 
 				"Warning: can't dump database $db from $rname ($rhost). " .
 				"Error opening filehandle: " . $! . "\n";
 			print $errmsg;
+			syslog("warning", $errmsg);
 		}else{                                        # execute command via ssh
 			$ssh->system({stdout_fh => $fh}, $dumpstr);       # and write to fh
 			if($ssh->error) {
@@ -138,6 +143,7 @@ foreach my $db (@databases) {
 					"Warning: can't dump database $db from $rname ($rhost). " .
 					"Error while SSH command: " . $ssh->error . "\n";
 				print $errmsg;
+				syslog("warning", $errmsg);
 }
 			close($fh);
 		}
@@ -153,11 +159,13 @@ print colored("[Backup all databases]\n", 'bold green');
 if($debug) {
 	print "$dumpstr\n";
 }else{
+	syslog("info", "backup all databases from $rname ($rhost)");
 	if(!open(my $fh, ">", $backupdir."all-databases.sql")) {  # open filehandle
 		my $errmsg =
 			"Warning: can't dump databases from $rname ($rhost) . " . 
 			"Error opening filehandle: " . $! . "\n";
 		print $errmsg;
+		syslog("warning", $errmsg);
 	}else{                                            # execute command via ssh
 		$ssh->system({stdout_fh => $fh}, $dumpstr);           # and write to fh
 		if($ssh->error) {
@@ -165,11 +173,13 @@ if($debug) {
 				"Warning: can't dump databases from $rname ($rhost). " . 
 				"Error while SSH command: " . $ssh->error . "\n";
 			print $errmsg;
+			syslog("warning", $errmsg);
 }
 		close($fh);
 	}
 }
 
+syslog("info", 'end MySQL backup');
 
 exit 0;
 
@@ -183,11 +193,12 @@ sub buildPathStr {
 	}
 	return $pathStr;
 }
-                                            # print message (on debug) and exit
+                                # print message (on debug), log as err and exit
 sub pLogErrExit($) {
 	my $message = shift;
 	
 	print $message if $debug;
+	syslog("err", $message);
 
 	exit 1;
 }
