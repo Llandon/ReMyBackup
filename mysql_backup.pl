@@ -14,7 +14,7 @@
 ## ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 ## OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-## Remote MySQL backup skript 0.1.2
+## Remote MySQL backup skript 0.1.3
 
 use warnings;
 use strict;
@@ -23,6 +23,7 @@ use DBI;
 use POSIX qw(strftime);
 use Config::Simple;
 use Term::ANSIColor;
+use File::Path qw(make_path);
 use Getopt::Long;
 use Data::Dumper;
 use Net::OpenSSH;
@@ -90,6 +91,12 @@ my $rname  = $clientCfg{rname};
                                                      # build backup path string
 my $date      = strftime("%A", localtime);
 my $backupdir = buildPathStr($backupvault,$rname,$date);
+                                                       # mk backupdir if !exist
+if( !-d $backupdir ) {
+	make_path $backupdir or do {
+		pLogErrExit("Failed to create path: $backupdir");
+	};
+};
 
 # get all remote databases ####################################################
                                                           # open ssh connection
