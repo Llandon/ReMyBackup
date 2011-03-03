@@ -14,7 +14,7 @@
 ## ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 ## OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-## Remote MySQL backup skript ReMyBackup 0.3.0
+## Remote MySQL backup skript ReMyBackup 0.3.1
 
 use warnings;
 use strict;
@@ -51,7 +51,7 @@ GetOptions (
 
 # build config paths ##########################################################
 
-my $cfgPath       = '/etc/mysql-backup/';
+my $cfgPath       = '/etc/ReMyBackup/';
 my $mainCfgFile   = $cfgPath . 'main.cfg';
 
 my $clientCfgPath = $cfgPath . 'clients/';
@@ -149,7 +149,7 @@ foreach my $db (@databases) {
 					"Error while SSH command: " . $ssh->error . "\n";
 				print $errmsg;
 				syslog("warning", $errmsg);
-}
+			}
 			close($fh);
 		}
 	}
@@ -179,7 +179,7 @@ if($debug) {
 				"Error while SSH command: " . $ssh->error . "\n";
 			print $errmsg;
 			syslog("warning", $errmsg);
-}
+		}
 		close($fh);
 	}
 }
