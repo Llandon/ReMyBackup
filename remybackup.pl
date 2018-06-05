@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-## Copyright (c) 2010-2011, Andreas Schwarz andreas.schwarz@uni-erlangen.de
+## Copyright (c) 2010-2018, Andreas Schwarz a.schwarz_dev@dntw.de
 ##
 ## Permission to use, copy, modify, and/or distribute this software for any
 ## purpose with or without fee is hereby granted, provided that the above
@@ -14,7 +14,7 @@
 ## ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 ## OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-## Remote MySQL backup skript ReMyBackup 0.3.1
+## Remote MySQL backup skript ReMyBackup 0.4.0
 
 use warnings;
 use strict;
@@ -25,7 +25,6 @@ use Config::Simple;
 use Term::ANSIColor;
 use File::Path qw(make_path);
 use Getopt::Long;
-use Data::Dumper;
 use Sys::Syslog;
 use Net::OpenSSH;
 
@@ -77,12 +76,17 @@ my $backupvault = $mainCfg{backupvault};
 my @dbexcludes  = @{$mainCfg{dbexcludes}};
 my @sepdumpopt;
 my @alldumpopt;
-                                           # check if compatibility mode is set
-if($clientCfg{compmode}) {
-	@sepdumpopt  = @{$mainCfg{sepdumpoptcomp}};
-	@alldumpopt  = @{$mainCfg{alldumpoptcomp}};
+
+                               # check if dump options are set in client config
+if($clientCfg{sepdumpopt}) {
+	@sepdumpopt  = @{$clientCfg{sepdumpopt}};
 }else{
 	@sepdumpopt  = @{$mainCfg{sepdumpopt}};
+}
+
+if($clientCfg{alldumpopt}) {
+	@alldumpopt  = @{$clientCfg{alldumpopt}};
+}else{
 	@alldumpopt  = @{$mainCfg{alldumpopt}};
 }
                                            # assign variables from [client].cfg
