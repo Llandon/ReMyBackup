@@ -73,6 +73,7 @@ printCfg(%clientCfg) if !$batch;
 my $mysqlClient = $mainCfg{mysqlClient};
 my $mysqldump   = $mainCfg{mysqldump};
 my $backupvault = $mainCfg{backupvault};
+my $compress    = $mainCfg{compress};
 my @dbexcludes  = @{$mainCfg{dbexcludes}};
 my @sepdumpopt;
 my @alldumpopt;
@@ -88,6 +89,10 @@ if($clientCfg{alldumpopt}) {
 	@alldumpopt  = @{$clientCfg{alldumpopt}};
 }else{
 	@alldumpopt  = @{$mainCfg{alldumpopt}};
+}
+
+if(defined($clientCfg{compress})) {
+	$compress = $clientCfg{compress};
 }
                                            # assign variables from [client].cfg
 my $dbuser = $clientCfg{dbuser};
@@ -139,22 +144,45 @@ foreach my $db (@databases) {
 		print "$dumpstr\n";
 	}else{
 		syslog("info", "backup database $db from $rname ($rhost)");
-		if(!open(my $fh, ">", $backupdir . $db . ".sql")) {   # open filehandle
-			my $errmsg = 
-				"Warning: can't dump database $db from $rname ($rhost). " .
-				"Error opening filehandle: " . $! . "\n";
-			print $errmsg;
-			syslog("warning", $errmsg);
-		}else{                                        # execute command via ssh
-			$ssh->system({stdout_fh => $fh}, $dumpstr);       # and write to fh
-			if($ssh->error) {
+		if($compress) {
+			if(!open(my $fh, ">:gzip", $backupdir . $db . ".sql.gz")) {   # open filehandle
 				my $errmsg = 
 					"Warning: can't dump database $db from $rname ($rhost). " .
-					"Error while SSH command: " . $ssh->error . "\n";
+					"Error opening filehandle: " . $! . "\n";
 				print $errmsg;
 				syslog("warning", $errmsg);
+			}else{                                        # execute command via ssh
+				my ($sshfs, $sshpid) = $ssh->pipe_out($dumpstr);
+				if($ssh->error) {
+					my $errmsg = 
+						"Warning: can't dump database $db from $rname ($rhost). " .
+						"Error while SSH command: " . $ssh->error . "\n";
+					print $errmsg;
+					syslog("warning", $errmsg);
+				}
+				while(<$sshfs>) {
+					print $fh $_;
+				}
+				close($fh);
 			}
-			close($fh);
+		}else{
+			if(!open(my $fh, ">", $backupdir . $db . ".sql")) {   # open filehandle
+				my $errmsg = 
+					"Warning: can't dump database $db from $rname ($rhost). " .
+					"Error opening filehandle: " . $! . "\n";
+				print $errmsg;
+				syslog("warning", $errmsg);
+			}else{                                        # execute command via ssh
+				$ssh->system({stdout_fh => $fh}, $dumpstr);       # and write to fh
+				if($ssh->error) {
+					my $errmsg = 
+						"Warning: can't dump database $db from $rname ($rhost). " .
+						"Error while SSH command: " . $ssh->error . "\n";
+					print $errmsg;
+					syslog("warning", $errmsg);
+				}
+				close($fh);
+			}
 		}
 	}
 }
@@ -169,22 +197,45 @@ if($debug) {
 	print "$dumpstr\n";
 }else{
 	syslog("info", "backup all databases from $rname ($rhost)");
-	if(!open(my $fh, ">", $backupdir."all-databases.sql")) {  # open filehandle
-		my $errmsg =
-			"Warning: can't dump databases from $rname ($rhost) . " . 
-			"Error opening filehandle: " . $! . "\n";
-		print $errmsg;
-		syslog("warning", $errmsg);
-	}else{                                            # execute command via ssh
-		$ssh->system({stdout_fh => $fh}, $dumpstr);           # and write to fh
-		if($ssh->error) {
-			my $errmsg = 
-				"Warning: can't dump databases from $rname ($rhost). " . 
-				"Error while SSH command: " . $ssh->error . "\n";
+	if($compress) {
+		if(!open(my $fh, ">:gzip", $backupdir."all-databases.sql.gz")) {  # open filehandle
+			my $errmsg =
+				"Warning: can't dump databases from $rname ($rhost) . " . 
+				"Error opening filehandle: " . $! . "\n";
 			print $errmsg;
 			syslog("warning", $errmsg);
+		}else{                                            # execute command via ssh
+			my ($sshfs, $sshpid) = $ssh->pipe_out($dumpstr);
+			if($ssh->error) {
+				my $errmsg = 
+					"Warning: can't dump databases from $rname ($rhost). " . 
+					"Error while SSH command: " . $ssh->error . "\n";
+				print $errmsg;
+				syslog("warning", $errmsg);
+			}
+			while(<$sshfs>) {
+				print $fh $_;
+			}
+			close($fh);
 		}
-		close($fh);
+	}else{
+		if(!open(my $fh, ">", $backupdir."all-databases.sql")) {  # open filehandle
+			my $errmsg =
+				"Warning: can't dump databases from $rname ($rhost) . " . 
+				"Error opening filehandle: " . $! . "\n";
+			print $errmsg;
+			syslog("warning", $errmsg);
+		}else{                                            # execute command via ssh
+			$ssh->system({stdout_fh => $fh}, $dumpstr);           # and write to fh
+			if($ssh->error) {
+				my $errmsg = 
+					"Warning: can't dump databases from $rname ($rhost). " . 
+					"Error while SSH command: " . $ssh->error . "\n";
+				print $errmsg;
+				syslog("warning", $errmsg);
+			}
+			close($fh);
+		}
 	}
 }
 
