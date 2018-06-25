@@ -1,0 +1,79 @@
+lsmount(1)
+==========
+:doctype: manpage
+:man source: remybackup
+:man manual: remybackup manual
+
+Name
+----
+ReMyBackup - a simple MySQL backup script
+
+DESCRIPTION
+-----------
+ReMyBackup do database backups
+
+OPTIONS
+-------
+*--batch* ::
+	no informational output
+*--debug* ::
+	show debug outputs
+*--client* 'Client-Config' ::
+	use given client config
+
+CONFIGURATION
+-------------
+
+main configuration file /etc/ReMyBackup/main.cfg
+
+client configuration files /etc/ReMyBackup/clients/*.cfg
+
+Available Options in main configuration
+---------------------------------------
+
+*mysqlClient* ::
+    path to mysql client binary
+*mysqldump* ::
+    path to mysqldump binary
+*backupvault* ::
+    path to backup directory
+*dbexcludes* ::
+    ignore this databases
+*alldumpopt* ::
+    options for full backup
+*sepdumpopt* ::
+    options for file per database backup
+*compress* ::
+	compress backup files (gzip)
+
+Available Options in client configuration files
+------------------------------------------------
+
+*dbuser* ::
+    database user
+*dbpass* ::
+    database password
+*dbhost* ::
+    database host
+*ruser* ::
+    remote user
+*rhost* ::
+    remote host
+*rname* ::
+    remote host name
+*compress* ::
+    compress backup files (gzip)
+
+Config format: 
+    option: VALUE
+
+AUTHOR
+------
+*ReMyBackup* is written by Andreas Schwarz *contact:* a.schwarz_dev@dntw.de
+
+RESOURCES
+---------
+Git: <https://github.com/Llandon/ReMyBackup.git>
+
+WWW: <https://github.com/Llandon/ReMyBackup>
+
